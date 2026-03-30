@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Su Ürünleri Mevzuatı Deneme Sınavı</title>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 10px;
+      display: flex;
+      justify-content: center;
+      padding-bottom: 80px;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 860px;
+    }
+
+    .menu-container, .quiz-container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 14px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      width: 100%;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .menu-btn {
+      border: none;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: left;
+      cursor: pointer;
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      color: white;
+    }
+
+    .menu-btn.locked {
+      background: linear-gradient(135deg, #6c757d, #495057);
+      cursor: not-allowed;
+      order: 999;
+      opacity: 0.85;
+    }
+
+    .wrong-menu-btn {
+      border: none;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: left;
+      cursor: pointer;
+      background: linear-gradient(135deg, #dc3545, #a71d2a);
+      color: white;
+      order: 9999;
+      animation: wrongBlink 10s infinite;
+    }
+
+    @keyframes wrongBlink {
+      0%, 45% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(220,53,69,0);
+      }
+      50% {
+        opacity: 0.35;
+        transform: scale(1.02);
+        box-shadow: 0 0 18px rgba(220,53,69,0.45);
+      }
+      55%, 100% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(220,53,69,0);
+      }
+    }
+
+    .quiz-container {
+      display: none;
+      position: relative;
+      padding-top: 85px;
+      min-height: 100vh;
+    }
+
+    .progress-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 6px;
+      background: #28a745;
+      transition: 0.3s;
+      width: 0%;
+      border-radius: 14px 14px 0 0;
+    }
+
+    .main-menu-btn {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: calc(1rem + 4pt);
+      color: #333;
+      padding: 5px 0;
+    }
+
+    .header-info {
+      position: absolute;
+      top: 15px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding-right: 110px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      min-width: 0;
+      flex: 1;
+      flex-wrap: wrap;
+    }
+
+    .header-subject {
+      font-weight: normal;
+      color: #777;
+      font-size: 0.95rem;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .retry-badge {
+      display: none;
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffe69c;
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+
+    .question-title {
+      margin-top: 0;
+      margin-bottom: 16px;
+      line-height: 1.45;
+      font-size: 1.2rem;
+      color: #222;
+    }
+
+    .option-btn {
+      width: 100%;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      border: 2px solid #e9ecef;
+      background: #f8f9fa;
+      text-align: left;
+      cursor: pointer;
+      font-size: 1.05rem;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+      position: relative;
+    }
+
+    .option-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+
+    .option-btn:disabled {
+      cursor: default;
+    }
+
+    .option-btn.correct {
+      background: #d4edda !important;
+      border-color: #28a745 !important;
+      color: #155724 !important;
+      font-weight: bold;
+    }
+
+    .option-btn.wrong {
+      background: #f8d7da !important;
+      border-color: #dc3545 !important;
+      color: #721c24 !important;
+      font-weight: bold;
+    }
+
+    .tick {
+      display: inline-block;
+      margin-left: 10px;
+      color: #1f9d45;
+      font-weight: bold;
+      opacity: 0;
+      transform: scale(0.4);
+    }
+
+    .tick.show {
+      animation: popTick 0.45s ease forwards;
+    }
+
+    @keyframes popTick {
+      0%   { opacity: 0; transform: scale(0.4); }
+      60%  { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .explanation {
+      display: none;
+      margin-top: 20px;
+      padding: 15px;
+      background: #eaf2f8;
+      border-left: 5px solid #2980b9;
+      border-radius: 8px;
+      line-height: 1.5;
+    }
+
+    .nav-controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 25px;
+    }
+
+    .nav-btn {
+      flex: 1;
+      padding: 18px;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .next-btn { background: #007bff; }
+    .prev-btn {
+      background: #e9ecef;
+      color: #dc3545 !important;
+      border: 1px solid #ddd;
+    }
+
+    .quiz-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+      color: #666;
+      font-weight: bold;
+      font-size: 0.9rem;
+      flex-wrap: wrap;
+    }
+
+    .disclaimer-box {
+      margin-top: 20px;
+      padding: 15px;
+      background: #fdfdfd;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      color: #888;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .disclaimer-title {
+      display: block;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+    }
+
+    .source-tag {
+      position: fixed;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(0, 0, 0, 0.05);
+      color: #777;
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: bold;
+      z-index: 9999;
+    }
+
+    .reset-set-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      background: #ffc107;
+      border: none;
+      padding: 8px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      cursor: pointer;
+      z-index: 5;
+    }
+
+    @media (max-width: 480px) {
+      .quiz-container {
+        padding-top: 110px;
+      }
+
+      .header-info {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        padding-right: 104px;
+        align-items: flex-start;
+      }
+
+      .header-left {
+        display: block;
+        padding-right: 6px;
+      }
+
+      .main-menu-btn {
+        display: block;
+        font-size: 0.95rem;
+        padding: 0;
+        margin-bottom: 6px;
+      }
+
+      .header-subject {
+        display: block;
+        margin: 0;
+        font-size: 0.82rem;
+        line-height: 1.3;
+        max-width: 100%;
+      }
+
+      .question-title {
+        font-size: 1.05rem;
+      }
+
+      .option-btn {
+        font-size: 1rem;
+        padding: 14px;
+      }
+
+      .reset-set-btn {
+        top: 12px;
+        right: 12px;
+        font-size: 0.75rem;
+        padding: 7px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="menuContainer" class="menu-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:20px;">
+      <h1 id="mainTitle" style="margin:0;">Su Ürünleri Mevzuatı Deneme Sınavı</h1>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+        <button onclick="clearAllStatistics()" style="background:#dc3545; color:white; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:0.75rem;">
+          Verileri Sıfırla
+        </button>
+        <button onclick="shuffleAllQuestions()" style="background:#28a745; color:white; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:0.75rem;">
+          Soruları Karıştır
+        </button>
+      </div>
+    </div>
+
+    <div id="menuGrid" class="menu-grid"></div>
+
+    <div class="disclaimer-box">
+      <span class="disclaimer-title">⚠️ Önemli Uyarı</span>
+      Bu sistemde yer alan içerikler yalnızca eğitim amaçlıdır. İçeriklerin kullanımından doğabilecek doğrudan veya dolaylı hiçbir sorumluluk kabul edilmez. Tüm kullanım sorumluluğu kullanıcıya aittir.
+    </div>
+  </div>
+
+  <div id="quizContainer" class="quiz-container">
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="header-info">
+      <div class="header-left">
+        <button onclick="showMenu()" class="main-menu-btn">☰ Ana Menü</button>
+        <span id="headerSubject" class="header-subject"></span>
+      </div>
+    </div>
+
+    <button onclick="resetCurrentSet()" class="reset-set-btn">Seti Sıfırla</button>
+
+    <div id="retryBadge" class="retry-badge">Yalnış cevaplanan soru</div>
+    <h2 id="questionText" class="question-title">...</h2>
+
+    <div id="optionsArea"></div>
+
+    <div class="quiz-footer">
+      <div id="footerLeft">Kalan: 0</div>
+      <div id="footerRight">0 / 0</div>
+    </div>
+
+    <div id="explanationArea" class="explanation"></div>
+
+    <div class="nav-controls">
+      <button id="prevBtn" class="nav-btn prev-btn" onclick="goBack()" style="visibility:hidden;">❮ Önceki</button>
+      <button id="nextBtn" class="nav-btn next-btn" onclick="goForward()" style="visibility:hidden;">Yeni Soru ❯</button>
+    </div>
+  </div>
+</div>
+
+<div class="source-tag" id="sourceTag">Kaynak: yapayzeka/ su_urunleri_mevzuati_versiyon_1</div>
+
+<script>
+  const BASE_SUBJECT = "Su Ürünleri Mevzuatı";
+  const VERSION_NUMBER = 1;
+
+  function buildVersionName(base, version) {
+    return `${base} Versiyon ${version}`;
+  }
+
+  function buildVersionSlug(base, version) {
+    return `${base.toLowerCase().replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ı/g, "i").replace(/ö/g, "o").replace(/ş/g, "s").replace(/ü/g, "u").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")}_versiyon_${version}`;
+  }
+
+  const CURRENT_SUBJECT = BASE_SUBJECT;
+  const VERSION_SLUG = buildVersionSlug(BASE_SUBJECT, VERSION_NUMBER);
+  const SOURCE_TEXT = `Kaynak: yapayzeka/ su_urunleri_mevzuati_versiyon_1`;
+  const QUESTIONS_PER_SET = 30;
+
+  const questions = [ { q: "Aşağıdaki türlerden hangisinin asgari avlanabilir boyu 20 cm'dir?", o: ["Sazan", "Çipura", "Levrek", "Lüfer"], c: 1, e: " Çipura. 2024/20 ve 2024/21 sayılı tebliğlerde çipura için asgari boy 20 cm'dir." }, { q: "Levrek için asgari avlanabilir boy kaç santimetredir?", o: ["22", "30", "20", "25"], c: 3, e: " 25 cm. Levrekte asgari avlanabilir boy 25 cm'dir." }, { q: "Hamsi için asgari avlanabilir boy aşağıdakilerden hangisidir?", o: ["9 cm", "12 cm", "10 cm", "8 cm"], c: 0, e: " 9 cm. Hamsi boy limiti 9 cm'dir." }, { q: "Lüfer balığının asgari avlanabilir boyu kaç cm'dir?", o: ["22", "24", "20", "25"], c: 1, e: " 24 cm. Lüferde asgari boy 24 cm olarak uygulanır." }, { q: "İstavrit için asgari avlanabilir boy kaç santimetredir?", o: ["12", "11", "15", "13"], c: 3, e: " 13 cm. İstavritte boy limiti 13 cm'dir." }, { q: "Sardalya için asgari avlanabilir boy aşağıdakilerden hangisidir?", o: ["11 cm", "10 cm", "12 cm", "13 cm"], c: 0, e: " 11 cm. Sardalyada asgari boy 11 cm'dir." }, { q: "Barbunya için asgari avlanabilir boy kaç cm'dir?", o: ["15", "12", "11", "13"], c: 1, e: " 12 cm. 2024 düzenlemesinde barbunya 12 cm olarak yer alır." }, { q: "Tekir için asgari avlanabilir boy aşağıdakilerden hangisidir?", o: ["14 cm", "11 cm", "13 cm", "12 cm"], c: 3, e: " 12 cm. Tekirde asgari boy 12 cm'dir." }, { q: "Mezgit için asgari avlanabilir boy kaç santimetredir?", o: ["15", "12", "13", "11"], c: 2, e: " 13 cm. Mezgitte asgari boy 13 cm'dir." }, { q: "Kalkan balığı için asgari avlanabilir boy aşağıdakilerden hangisidir?", o: ["45 cm", "50 cm", "40 cm", "35 cm"], c: 0, e: " 45 cm. Kalkan için alt boy limiti 45 cm'dir." }, { q: "Palamut için asgari avlanabilir boy kaç santimetredir?", o: ["20", "25", "30", "22"], c: 1, e: " 25 cm. Palamutta asgari avlanabilir boy 25 cm'dir." }, { q: "Zargana için asgari avlanabilir boy aşağıdakilerden hangisidir?", o: ["35 cm", "30 cm", "20 cm", "25 cm"], c: 3, e: " 25 cm. Zarganada asgari boy 25 cm'dir." }, { q: "Mercan için asgari avlanabilir boy kaç cm'dir?", o: ["15", "18", "20", "22"], c: 2, e: " 20 cm. Mercanda asgari boy 20 cm'dir." }, { q: "Karagöz için asgari avlanabilir boy aşağıdakilerden hangisidir?", o: ["18 cm", "20 cm", "22 cm", "25 cm"], c: 1, e: " 20 cm. Karagözde asgari boy 20 cm'dir." }, { q: "Minekop için asgari avlanabilir boy kaç santimetredir?", o: ["25", "35", "20", "30"], c: 3, e: " 30 cm. Minekopta asgari boy 30 cm'dir." }, { q: "Lagos için asgari avlanabilir boy aşağıdakilerden hangisidir?", o: ["50 cm", "55 cm", "45 cm", "35 cm"], c: 2, e: " 45 cm. Lagos için boy limiti 45 cm'dir." }, { q: "Orfoz için asgari avlanabilir boy kaç santimetredir?", o: ["35", "45", "50", "40"], c: 1, e: " 45 cm. Orfoz için asgari boy 45 cm'dir." }, { q: "Sinarit için asgari avlanabilir boy aşağıdakilerden hangisidir?", o: ["40 cm", "30 cm", "25 cm", "35 cm"], c: 3, e: " 35 cm. Sinaritte asgari boy 35 cm'dir." }, { q: "Kefal türlerinde sık sorulan asgari boy değeri aşağıdakilerden hangisidir?", o: ["20 cm", "25 cm", "18 cm", "22 cm"], c: 0, e: " 20 cm. Kefal grubu için sınavlarda en sık hatırlatılan boy değeri 20 cm'dir." }, { q: "Sazan için asgari avlanabilir boy kaç santimetredir?", o: ["30", "40", "35", "45"], c: 1, e: " 40 cm. Sazan boy limiti 40 cm'dir." }, { q: "Turna için asgari avlanabilir boy aşağıdakilerden hangisidir?", o: ["45 cm", "50 cm", "35 cm", "40 cm"], c: 3, e: " 40 cm. Turnada asgari boy 40 cm'dir." }, { q: "Yayın balığı için asgari avlanabilir boy kaç santimetredir?", o: ["100", "70", "90", "80"], c: 2, e: " 90 cm. Yayın balığında boy limiti 90 cm'dir." }, { q: "Doğal alabalıklar için genel asgari avlanabilir boy aşağıdakilerden hangisidir?", o: ["25 cm", "30 cm", "22 cm", "20 cm"], c: 0, e: " 25 cm. Alabalıklarda genel sınav değeri 25 cm'dir." }, { q: "Aşağıdakilerden hangisinin boy limiti en küçüktür?", o: ["Lüfer", "İstavrit", "Levrek", "Hamsi"], c: 3, e: " Hamsi. Hamside asgari boy 9 cm ile daha düşüktür." }, { q: "Aşağıdakilerden hangisinin boy limiti en yüksektir?", o: ["Çipura", "Yayın", "Palamut", "Levrek"], c: 1, e: " Yayın. Yayın balığı için asgari boy 90 cm'dir." }, { q: "Çipura ile levrek karşılaştırıldığında boy limiti daha yüksek olan tür hangisidir?", o: ["Levrek", "Çipura", "Eşit", "Türlere göre değişmez"], c: 0, e: " Levrek. Çipura 20 cm, levrek 25 cm'dir." }, { q: "Lüfer ile palamut karşılaştırıldığında asgari boyları için doğru ifade hangisidir?", o: ["Lüfer daha yüksektir", "Eşittir", "Palamut daha yüksektir", "İkisi için boy limiti yoktur"], c: 2, e: " Palamut daha yüksektir. Lüfer 24 cm, palamut 25 cm'dir." }, { q: "Barbunya ve tekir için 2024 tebliğinde uygulanan asgari boy kaç cm'de eşitlenmiştir?", o: ["11", "12", "14", "13"], c: 1, e: " 12 cm. Barbunya 12 cm'ye indirilmiş, tekir 12 cm'ye çıkarılmıştır." }, { q: "Kalkan balığında 44 cm boyundaki bir birey için hangisi doğrudur?", o: ["Yasal olarak avlanamaz", "Sadece amatör avlayabilir", "Yasal olarak avlanabilir", "Kotaya dahildir"], c: 0, e: " Yasal olarak avlanamaz. Kalkan için sınır 45 cm'dir." }, { q: "Sazan balığında 39 cm boyundaki bir birey için hangisi doğrudur?", o: ["Avlanması serbesttir", "Sadece ticari avda serbesttir", "Avlanması yasaktır", "Yasal sınırdadır"], c: 2, e: " Avlanması yasaktır. Sazanda alt sınır 40 cm'dir." }, { q: "Hamside 8,5 cm uzunluğundaki birey için temel kural hangisidir?", o: ["İç sularda serbesttir", "Sadece gece avlanabilir", "Avlanabilir", "Yasal olarak alıkonulamaz"], c: 3, e: " Yasal olarak alıkonulamaz. Hamside asgari boy 9 cm'dir." }, { q: "Levrekte 25 cm uzunluğundaki birey için hangisi doğrudur?", o: ["Boyca küçüktür", "Asgari boya uygundur", "Mutlaka iade edilir", "Sadece amatör ava uygundur"], c: 1, e: " Asgari boya uygundur. Levrekte sınır 25 cm'dir." }, { q: "Lüferde 23 cm boyundaki bir birey için doğru ifade hangisidir?", o: ["Yasal sınırın altındadır", "Tebliğ kapsamı dışıdır", "Yasal avlanabilir", "Sadece ticari avda serbesttir"], c: 0, e: " Yasal sınırın altındadır. Lüfer için asgari boy 24 cm'dir." }, { q: "İstavritte 13 cm boyundaki birey için hangisi doğrudur?", o: ["Alıkonulamaz", "Boyca küçüktür", "Sadece iç sularda serbesttir", "Asgari boya eşittir"], c: 3, e: " Asgari boya eşittir. İstavritte alt sınır 13 cm'dir." }, { q: "Aşağıdaki türlerden hangisinde asgari boy 45 cm olarak uygulanır?", o: ["Karagöz", "Orfoz", "Mercan", "Sardalya"], c: 1, e: " Orfoz. Orfozda asgari boy 45 cm'dir." }, { q: "Aşağıdaki türlerden hangisinde asgari boy 35 cm olarak uygulanır?", o: ["Hamsi", "Çipura", "Sinarit", "Barbunya"], c: 2, e: " Sinarit. Sinaritte asgari boy 35 cm'dir." }, { q: "Aşağıdaki türlerden hangisi 30 cm asgari boyla korunur?", o: ["Minekop", "Karagöz", "Kefal", "Lüfer"], c: 0, e: " Minekop. Minekopta boy limiti 30 cm'dir." }, { q: "Aşağıdakilerden hangisi 20 cm asgari boy uygulanan türlerden biridir?", o: ["Palamut", "İstavrit", "Hamsi", "Karagöz"], c: 3, e: " Karagöz. Karagöz için asgari boy 20 cm'dir." }, { q: "Aşağıdaki eşleştirmelerden hangisi yanlıştır?", o: ["Çipura-20 cm", "Lüfer-24 cm", "Hamsi-11 cm", "Levrek-25 cm"], c: 2, e: " Hamsi-11 cm. Hamsi için doğru alt sınır 9 cm'dir." }, { q: "Aşağıdaki eşleştirmelerden hangisi doğrudur?", o: ["Turna-40 cm", "Kalkan-35 cm", "Sazan-35 cm", "Yayın-60 cm"], c: 0, e: " Turna-40 cm. Diğer eşleştirmeler tebliğdeki değerlerle uyumlu değildir." }, { q: "Asgari avlanabilir boy uygulamasının temel amacı aşağıdakilerden hangisidir?", o: ["Pazar fiyatını artırmak", "Balığın en az bir kez üremesine imkan vermek", "İthalatı azaltmak", "Av miktarını sınırsız artırmak"], c: 1, e: " Balığın en az bir kez üremesine imkan vermek. Boy limitleri stokların sürdürülebilir yönetimi içindir." }, { q: "Asgari boyun altında kalan bireylerin alıkonulması için genel kural hangisidir?", o: ["Kooperatif izniyle mümkündür", "Sadece hafta sonu serbesttir", "Yasaktır", "Serbesttir"], c: 2, e: " Yasaktır. Alt boydaki bireyler korunur." }, { q: "Balık boyu ölçümünde esas alınan uzunluk genellikle aşağıdakilerden hangisidir?", o: ["Total boy", "Göz çapı", "Baş uzunluğu", "Standart boy"], c: 0, e: " Total boy. Ölçüm burun ucundan kuyruk ucuna kadar yapılır." }, { q: "Balık boyu pratikte nereden nereye ölçülür?", o: ["Karın yüzgecinden kuyruğa", "Burun ucundan kuyruk ucuna", "Gözden anal yüzgece", "Solungaçtan sırt yüzgecine"], c: 1, e: " Burun ucundan kuyruk ucuna. Tebliğlerde kullanılan esas ölçüm total boydur." }, { q: "Av yasağı dönemlerinin temel biyolojik gerekçesi aşağıdakilerden hangisidir?", o: ["Yem maliyetini azaltmak", "Liman trafiğini azaltmak", "Üreme dönemini korumak", "İhracatı sınırlamak"], c: 2, e: " Üreme dönemini korumak. Zaman yasakları stokların yenilenmesini destekler." }, { q: "Aşağıdakilerden hangisi sürdürülebilir balıkçılık anlayışına uygundur?", o: ["Boy, zaman ve yer yasaklarına uyulması", "Sezon dışı avcılık", "Küçük boyların alıkonulması", "Kontrolsüz av gücü artırımı"], c: 0, e: " Boy, zaman ve yer yasaklarına uyulması. Mevzuatın temel amacı sürdürülebilirliktir." }, { q: "Ticari amaçlı su ürünleri avcılığını düzenleyen güncel tebliğ numarası hangisidir?", o: ["2024/19", "2024/20", "2025/20", "2024/21"], c: 1, e: " 2024/20. Ticari amaçlı avcılığı düzenleyen tebliğ 6/1 numaralı Tebliğ No: 2024/20'dir." }, { q: "Amatör amaçlı su ürünleri avcılığını düzenleyen güncel tebliğ numarası hangisidir?", o: ["2025/20", "2024/20", "2025/21", "2024/21"], c: 3, e: " 2024/21. Amatör amaçlı avcılık 6/2 numaralı Tebliğ No: 2024/21 ile düzenlenmiştir." }, { q: "2024 tarihli 6/1 numaralı tebliğ hangi alanı düzenler?", o: ["Su ürünleri yetiştiriciliği destekleri", "Balık yemi üretimi", "Ticari amaçlı su ürünleri avcılığı", "Sadece ihracat işlemleri"], c: 2, e: " Ticari amaçlı su ürünleri avcılığı. 6/1 numaralı tebliğ ticari avcılığı düzenler." }, { q: "2024 tarihli 6/2 numaralı tebliğ hangi alanı düzenler?", o: ["Amatör amaçlı su ürünleri avcılığı", "Balıkçı barınakları", "Su ürünleri ithalatı", "Yetiştiricilik ruhsatı"], c: 0, e: " Amatör amaçlı su ürünleri avcılığı. 6/2 numaralı tebliğ amatör avcılığa ilişkindir." }, { q: "2024 tarihli yeni 6/1 ve 6/2 tebliğleri ne zaman Resmî Gazete'de yayımlanmıştır?", o: ["1 Ocak 2024", "1 Eylül 2024", "31 Aralık 2024", "11 Ağustos 2024"], c: 3, e: " 11 Ağustos 2024. Her iki tebliğ de bu tarihte yayımlanmıştır." }, { q: "Su ürünleri avcılığına ilişkin tür, boy, zaman ve yer sınırlamalarını koyan temel idari otorite hangisidir?", o: ["Ticaret Bakanlığı", "Tarım ve Orman Bakanlığı", "Sağlık Bakanlığı", "Belediyeler Birliği"], c: 1, e: " Tarım ve Orman Bakanlığı. Düzenleyici tebliğler Bakanlık tarafından yayımlanır." }, { q: "Aşağıdakilerden hangisi su ürünleri avcılığında kullanılan temel koruma araçlarından biri değildir?", o: ["Zaman yasağı", "Boy yasağı", "Sınırsız av aracı kullanımı", "Yer yasağı"], c: 2, e: " Sınırsız av aracı kullanımı. Mevzuat bunun aksine sınırlamalar getirir." }, { q: "Asgari boy düzenlemesi en doğrudan hangi grubu korur?", o: ["Henüz yeterli büyüklüğe ulaşmamış bireyleri", "Sadece tüketicileri", "Yalnız ihracatçıları", "Sadece işleme tesislerini"], c: 0, e: " Henüz yeterli büyüklüğe ulaşmamış bireyleri. Böylece stokların devamlılığı desteklenir." }, { q: "Boy yasağına uymayan avcılık faaliyeti genel olarak hangi kapsamda değerlendirilir?", o: ["Bilimsel avcılık", "Yasal teşvik", "Destekleme uygulaması", "Mevzuata aykırılık"], c: 3, e: " Mevzuata aykırılık. Boy sınırının altındaki av ürünlerinin alıkonulması yasaktır." }, { q: "Aşağıdakilerden hangisi av yasağı döneminde yapılması yasaklanan faaliyete örnektir?", o: ["Yetiştiricilik tesisi işletilmesi", "Tebliğe uygun denetim yapılması", "Kapalı sezonda hedef türün avlanması", "Bilimsel veri toplanması"], c: 2, e: " Kapalı sezonda hedef türün avlanması. Zaman yasakları buna engeldir." }, { q: "Yasak yer, yasak zaman ve yasak boy hükümlerine uymanın ortak amacı aşağıdakilerden hangisidir?", o: ["Sürdürülebilir stok yönetimi", "Pazar rekabetini azaltmak", "İthalatı artırmak", "Sadece vergi tahsilatı"], c: 0, e: " Sürdürülebilir stok yönetimi. Mevzuat bu temel amaçla düzenlenir." }, { q: "Aşağıdakilerden hangisi iç sularda sık sorulan koruma türlerinden biridir?", o: ["Çaça", "Orkinos", "Kılıç balığı", "Sazan"], c: 3, e: " Sazan. İç su mevzuatı ve sınav sorularında sazan sık yer alır." }, { q: "Aşağıdakilerden hangisi deniz türlerinden biridir?", o: ["Sazan", "Çipura", "Yayın", "Turna"], c: 1, e: " Çipura. Çipura bir deniz balığıdır." }, { q: "Aşağıdakilerden hangisi iç su türlerinden biridir?", o: ["Palamut", "Levrek", "Yayın", "Lüfer"], c: 2, e: " Yayın. Yayın iç sularda da avlanan temel türlerdendir." }, { q: "Mevzuatta boy sınırı yanında hangi başka sınırlama türü de çok yaygındır?", o: ["Tat sınırlaması", "Renk sınırlaması", "Yağ oranı sınırlaması", "Zaman sınırlaması"], c: 3, e: " Zaman sınırlaması. Türlere göre av sezonları ayrıca düzenlenir." }, { q: "Su ürünleri mevzuatında 'alıkonulabilir miktar' ifadesi en çok hangi başlıkla birlikte görülür?", o: ["İhracat primleri", "Amatör avcılık kuralları", "Balık unu üretimi", "Gemi boyama işleri"], c: 1, e: " Amatör avcılık kuralları. Amatör avda kişi başı limitler de düzenlenir." }, { q: "Aşağıdakilerden hangisi amatör avcılığa ilişkin bir düzenleme örneğidir?", o: ["Kişi başı alıkonulabilir miktar", "Yem hammaddesi kotası", "İhracat iadesi", "İşleme tesisi kapasite raporu"], c: 0, e: " Kişi başı alıkonulabilir miktar. Bu tür sınırlamalar amatör avcılıkta öne çıkar." }, { q: "Aşağıdakilerden hangisi ticari avcılığa ilişkin bir düzenleme örneğidir?", o: ["Perakende etiket tasarımı", "Ev tipi soğutucu seçimi", "Avcılık izin belgesi zorunluluğu", "Restoran menüsü hazırlığı"], c: 2, e: " Avcılık izin belgesi zorunluluğu. Ticari avda belge ve araç sınırlamaları önemlidir." }, { q: "2024 yılında hamsi için belirlenen toplam avlanabilir miktar kaç tondur?", o: ["200 bin ton", "400 bin ton", "300 bin ton", "500 bin ton"], c: 1, e: " 400 bin ton. Bakanlık 2024 düzenlemelerinde hamsi için toplam avlanabilir miktarı 400 bin ton olarak duyurmuştur." }, { q: "Tarım ve Orman Bakanlığı 2024 duyurusuna göre üretim planlaması kapsamında avcılıkta ilk etapta öne çıkan tür hangisidir?", o: ["Hamsi", "Levrek", "Palamut", "Kefal"], c: 0, e: " Hamsi. Bakanlık hamsiyi ilk etapta planlama kapsamına aldığını duyurmuştur." }, { q: "Aşağıdakilerden hangisi 2024 Bakanlık duyurusunda azami üretim miktarı belirlenen avcılık türleri arasında sayılmıştır?", o: ["Mercan", "Dil balığı", "İnci kefali", "Tekir"], c: 2, e: " İnci kefali. Bakanlık bazı türlerde azami üretim miktarı belirlediğini açıklamıştır." }, { q: "Aşağıdakilerden hangisi 2024 Bakanlık duyurusunda azami üretim miktarı belirlenen türlerden biridir?", o: ["Minekop", "Yılan balığı", "Barbunya", "Karagöz"], c: 1, e: " Yılan balığı. Üretim planlamasında sayılan türler arasındadır." }, { q: "Aşağıdakilerden hangisi 2024 Bakanlık duyurusunda azami üretim miktarı belirlenen türlerden biridir?", o: ["Beyaz kum midyesi", "Tekir", "Lüfer", "Mercan"], c: 0, e: " Beyaz kum midyesi. Üretim planlaması kapsamındaki türler arasında yer alır." }, { q: "Aşağıdakilerden hangisi 2024 Bakanlık duyurusunda yetiştiricilikte planlama kapsamındaki türlerden biridir?", o: ["Palamut", "Hamsi", "Çipura", "Kefal"], c: 2, e: " Çipura. Bakanlık yetiştiricilikte çipura, levrek, Türk somonu ve Akdeniz midyesini saymıştır." }, { q: "Aşağıdakilerden hangisi avcılıkta koruma-kullanma dengesine en uygun davranıştır?", o: ["Yasak sezonda av yapmak", "Boy ve sezon kurallarına uyarak avlanmak", "Alt boydaki balığı alıkoymak", "Yasak alanda ağ çekmek"], c: 1, e: " Boy ve sezon kurallarına uyarak avlanmak. Koruma-kullanma dengesi böyle sağlanır." }, { q: "Boy sınırının altında bir balık yakalandığında en uygun işlem aşağıdakilerden hangisidir?", o: ["Mevzuata uygun şekilde iade etmek", "Depolamak", "Satmak", "Gizlemek"], c: 0, e: " Mevzuata uygun şekilde iade etmek. Alt boy bireylerin korunması esastır." }, { q: "Aşağıdakilerden hangisi mevzuatın yalnızca biyolojik değil aynı zamanda ekonomik amacını da yansıtır?", o: ["Kısa vadede tüm stokları tüketmek", "Denetimi kaldırmak", "Stokların devamını sağlayarak gelecekteki av gelirini korumak", "Pazar çeşitliliğini azaltmak"], c: 2, e: " Stokların devamını sağlayarak gelecekteki av gelirini korumak. Sürdürülebilirlik ekonomik boyut da taşır." }, { q: "Aşağıdakilerden hangisi yasadışı avcılık örneğidir?", o: ["Avı kayıt altına almak", "Asgari boya uygun bireyi yakalamak", "Tebliğe uygun izin almak", "Yasak dönemde hedef türü avlamak"], c: 3, e: " Yasak dönemde hedef türü avlamak. Bu açık bir mevzuat ihlalidir." }, { q: "Balıkçı, 12 cm istavrit yakalamışsa hangi uygulama doğrudur?", o: ["Yasal alt sınırın altında olduğu için alıkoyamaz", "Alıkoyabilir", "Satabilir", "Yalnız restoranlara verebilir"], c: 0, e: " Yasal alt sınırın altında olduğu için alıkoyamaz. İstavritte sınır 13 cm'dir." }, { q: "Balıkçı, 25 cm levrek yakalamışsa hangi ifade doğrudur?", o: ["Sadece amatör avda geçerlidir", "Yasal alt sınırın altındadır", "Asgari boya uygundur", "Kesinlikle yasaktır"], c: 2, e: " Asgari boya uygundur. Levrekte sınır 25 cm'dir." }, { q: "Balıkçı, 24 cm palamut yakalamışsa hangi sonuç doğar?", o: ["Boy limitine uygundur", "Boy limitinin altındadır", "Kotaya girmez", "Sadece iç sularda uygundur"], c: 1, e: " Boy limitinin altındadır. Palamutta asgari boy 25 cm'dir." }, { q: "Balıkçı, 45 cm orfoz yakalamışsa boy bakımından durum nedir?", o: ["Asgari boya uygundur", "Yalnız amatör avda serbesttir", "Sadece bilimsel amaçla tutulur", "Alt sınırın altındadır"], c: 0, e: " Asgari boya uygundur. Orfozda sınır 45 cm'dir." }, { q: "Balıkçı, 34 cm sinarit yakalamışsa hangisi doğrudur?", o: ["Yasal olarak alıkonulabilir", "Sadece gece tutulabilir", "Asgari boyun altındadır", "İç sularda serbesttir"], c: 2, e: " Asgari boyun altındadır. Sinaritte sınır 35 cm'dir." }, { q: "Aşağıdakilerden hangisi asgari boy uygulamasının başarısını artıran tamamlayıcı unsurlardan biridir?", o: ["Kayıt dışılık", "Etkin denetim", "Denetimsizlik", "Belirsiz ölçüm"], c: 1, e: " Etkin denetim. Kuralların uygulanması denetimle güçlenir." }, { q: "Mevzuata göre belirlenen boy sınırlarının saha denetiminde kontrolü için en temel araç aşağıdakilerden hangisidir?", o: ["Cetvel/ölçüm", "Renk kartelası", "PH metre", "Termometre"], c: 0, e: " Cetvel/ölçüm. Boy denetimi fiziksel ölçümle yapılır." }, { q: "Aşağıdaki seçeneklerden hangisi su ürünleri mevzuatındaki düzenleme mantığına uygundur?", o: ["Hiç boy limiti koymamak", "Boy yerine yalnız fiyat belirlemek", "Türe göre farklı boy limiti belirlemek", "Tüm türlerde tek boy limiti uygulamak"], c: 2, e: " Türe göre farklı boy limiti belirlemek. Biyolojik özellikler farklıdır." }, { q: "Aşağıdakilerden hangisi bir mevzuat sorusunda 'boy yasağı' ile en çok birlikte sorulan kavramdır?", o: ["Ambalaj rengi", "Zaman yasağı", "Etiket tasarımı", "Tesis duvarı"], c: 1, e: " Zaman yasağı. Boy ve zaman yasakları birlikte temel koruma araçlarıdır." }, { q: "Amatör avcı için de asgari boy kuralı bakımından temel ilke hangisidir?", o: ["Amatör avcılar da uymak zorundadır", "Amatörler için boy limiti yoktur", "Sadece ticari avcılar uyar", "Amatörler sadece gece avlanır"], c: 0, e: " Amatör avcılar da uymak zorundadır. 6/2 tebliği bunu düzenler." }, { q: "Ticari ve amatör avcılık tebliğlerinde ortak koruma başlıklarından biri aşağıdakilerden hangisidir?", o: ["Yem fabrikası kapasitesi", "Evsel su faturası", "Tür ve boy sınırlamaları", "Restoran ruhsatı"], c: 2, e: " Tür ve boy sınırlamaları. Her iki tebliğ de koruma hükümleri içerir." }, { q: "Aşağıdaki seçeneklerden hangisi doğru eşleştirmedir?", o: ["2024/21-Yem yönetmeliği", "2024/20-Amatör avcılık", "2024/21-Ticari avcılık", "2024/20-Ticari avcılık"], c: 3, e: " 2024/20-Ticari avcılık. 2024/21 ise amatör avcılığa ilişkindir." }, { q: "Aşağıdaki seçeneklerden hangisi doğru eşleştirmedir?", o: ["6/2-Yetiştiricilik destekleri", "6/1-Ticari avcılık", "6/1-Amatör avcılık", "6/2-Ticari avcılık"], c: 1, e: " 6/1-Ticari avcılık. 6/2 ise amatör amaçlı avcılığı düzenler." }, { q: "Bakanlığın 2024 düzenlemelerine göre hamsiyle ilgili yeni yaklaşımın ana başlığı hangisidir?", o: ["Toplam avlanabilir miktar planlaması", "Boy sınırının kaldırılması", "Sınırsız avcılık", "Denetimlerin kaldırılması"], c: 0, e: " Toplam avlanabilir miktar planlaması. Hamsi için 400 bin ton üst sınır açıklanmıştır." }, { q: "Aşağıdakilerden hangisi sınav açısından en kritik eşleştirmelerden biridir?", o: ["Levrek-20 cm", "Lüfer-20 cm", "Sazan-30 cm", "Çipura-20 cm"], c: 3, e: " Çipura-20 cm. Sınavlarda sık sorulan temel eşleştirmelerdendir." }, { q: "Aşağıdakilerden hangisi sınav açısından en kritik eşleştirmelerden biridir?", o: ["Levrek-9 cm", "Hamsi-9 cm", "Palamut-9 cm", "İstavrit-9 cm"], c: 1, e: " Hamsi-9 cm. Hamsi için alt sınır 9 cm'dir." }, { q: "Aşağıdakilerden hangisi sınav açısından en kritik eşleştirmelerden biridir?", o: ["Lüfer-24 cm", "Lüfer-25 cm", "Lüfer-22 cm", "Lüfer-20 cm"], c: 0, e: " Lüfer-24 cm. Lüferin alt boyu 24 cm'dir." }, { q: "Aşağıdakilerden hangisi sınav açısından en kritik eşleştirmelerden biridir?", o: ["Sazan-35 cm", "Sazan-50 cm", "Sazan-40 cm", "Sazan-30 cm"], c: 2, e: " Sazan-40 cm. İç su balıkları içinde çok sorulur." }, { q: "Aşağıdakilerden hangisi sınav açısından en kritik eşleştirmelerden biridir?", o: ["Yayın-80 cm", "Yayın-90 cm", "Yayın-70 cm", "Yayın-100 cm"], c: 1, e: " Yayın-90 cm. Yayın balığında en temel değerlerden biridir." }, { q: "Aşağıdakilerden hangisi sınav açısından en kritik eşleştirmelerden biridir?", o: ["Turna-40 cm", "Turna-45 cm", "Turna-35 cm", "Turna-30 cm"], c: 0, e: " Turna-40 cm. Turna için alt boy limiti 40 cm'dir." }, { q: "Aşağıdakilerden hangisi sınav açısından en kritik eşleştirmelerden biridir?", o: ["Alabalık-22 cm", "Alabalık-20 cm", "Alabalık-25 cm", "Alabalık-30 cm"], c: 2, e: " Alabalık-25 cm. Doğal alabalıklar için sık sorulan değerdir." }, { q: "Aşağıdaki seçeneklerden hangisi mevzuata uygun bir sonuç cümlesidir?", o: ["Boy sınırları gereksizdir", "Küçük boyları korumak stokların devamı için gereklidir", "Amatör avcılar kurallardan muaftır", "Kapalı sezonların biyolojik önemi yoktur"], c: 1, e: " Küçük boyları korumak stokların devamı için gereklidir. Mevzuatın özü sürdürülebilirliktir." }, { q: "Aşağıdaki ifadelerden hangisi doğrudur?", o: ["Boy yasağı kaldırılmıştır", "Boy yasağı yalnız ticari avcılık için vardır", "Boy yasağı yalnız amatör avcılık için vardır", "Boy yasağı her iki alanda da temel bir koruma aracıdır"], c: 3, e: " Boy yasağı her iki alanda da temel bir koruma aracıdır. 6/1 ve 6/2 tebliğleri bunu destekler." }, { q: "Aşağıdakilerden hangisi doğru bir sıralamadır?", o: ["Lüfer < Hamsi < Sardalya", "Sazan < Hamsi < Çipura", "Hamsi < İstavrit < Levrek", "Levrek < Hamsi < Lüfer"], c: 2, e: " Hamsi < İstavrit < Levrek. Boy limitleri sırasıyla 9 cm, 13 cm ve 25 cm'dir." }, { q: "Aşağıdakilerden hangisi boy limiti 25 cm olan türlerden biridir?", o: ["Barbunya", "Palamut", "İstavrit", "Hamsi"], c: 1, e: " Palamut. Palamut için asgari boy 25 cm'dir." }, { q: "Aşağıdakilerden hangisi boy limiti 45 cm olan türlerden biridir?", o: ["Çipura", "Kefal", "Mercan", "Kalkan"], c: 3, e: " Kalkan. Kalkan balığında asgari avlanabilir boy 45 cm'dir." }
+];
+
+  document.getElementById("mainTitle").textContent = `${BASE_SUBJECT} Deneme Sınavı`;
+  document.getElementById("headerSubject").textContent = BASE_SUBJECT;
+  document.getElementById("sourceTag").textContent = SOURCE_TEXT;
+  document.title = `${BASE_SUBJECT} Deneme Sınavı`;
+
+  if (performance.navigation.type === performance.navigation.TYPE_RELOAD || !sessionStorage.getItem("session_active")) {
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith(storagePrefix())) localStorage.removeItem(k);
+    });
+    sessionStorage.setItem("session_active", "true");
+  }
+
+  let currentQuestions = [];
+  let currentIndex = 0;
+  let solvedIndex = -1;
+  let userAnswers = {};
+  let currentSetKey = "";
+  let stats = { correct: 0, wrong: 0 };
+  let wrongQuestionsMode = false;
+
+  function storagePrefix() {
+    return "exam_" + CURRENT_SUBJECT.replace(/\s+/g, "_") + "_";
+  }
+
+  function setStateKey(index) {
+    return storagePrefix() + "state_set_" + index;
+  }
+
+  function wrongQuestionsKey() {
+    return storagePrefix() + "wrong_questions_pool";
+  }
+
+  function getWrongQuestionsPool() {
+    return JSON.parse(localStorage.getItem(wrongQuestionsKey()) || "[]");
+  }
+
+  function saveWrongQuestionsPool(pool) {
+    localStorage.setItem(wrongQuestionsKey(), JSON.stringify(pool));
+  }
+
+  function addWrongQuestionToPool(question) {
+    const pool = getWrongQuestionsPool();
+
+    const exists = pool.some(item =>
+      item.q === question.q &&
+      JSON.stringify(item.o) === JSON.stringify(question.o)
+    );
+
+    if (!exists) {
+      pool.push({
+        q: question.q,
+        o: [...question.o],
+        c: question.c,
+        e: question.e || ""
+      });
+      saveWrongQuestionsPool(pool);
+    }
+  }
+
+  function normalizeQuestion(q, originalIndex) {
+    return {
+      id: q.id || ("q_" + originalIndex + "_" + Math.random().toString(36).slice(2, 8)),
+      originalNo: originalIndex + 1,
+      q: q.q,
+      o: [...q.o],
+      c: q.c,
+      e: q.e || "",
+      isRetry: q.isRetry || false,
+      retryFrom: q.retryFrom || null,
+      retryCount: q.retryCount || 0,
+      answeredCorrectly: q.answeredCorrectly || false
+    };
+  }
+
+  function initMenu() {
+    const menuGrid = document.getElementById("menuGrid");
+    menuGrid.innerHTML = "";
+
+    const totalSets = Math.ceil(questions.length / QUESTIONS_PER_SET);
+
+    let setsPerButton = 1;
+    let buttonCount = totalSets;
+
+    if (buttonCount > 10) {
+      setsPerButton = 2;
+      buttonCount = Math.ceil(totalSets / setsPerButton);
+    }
+
+    buttonCount = Math.min(buttonCount, 10);
+
+    for (let i = 0; i < buttonCount; i++) {
+      const startSetNo = i * setsPerButton + 1;
+      const endSetNo = Math.min(startSetNo + setsPerButton - 1, totalSets);
+
+      const start = (startSetNo - 1) * QUESTIONS_PER_SET;
+      const end = Math.min(endSetNo * QUESTIONS_PER_SET, questions.length);
+
+      if (start >= questions.length) continue;
+
+      const key = setStateKey(i);
+
+      const saved = JSON.parse(localStorage.getItem(key) || "null");
+      const solved = saved ? Object.keys(saved.userAnswers || {}).length : 0;
+      const correct = saved?.stats?.correct || 0;
+      const wrong = saved?.stats?.wrong || 0;
+
+      const totalCurrent = saved?.currentQuestions?.length || (end - start);
+      const isCompleted = saved ? (solved >= totalCurrent && totalCurrent > 0) : false;
+
+      const label = startSetNo === endSetNo
+        ? `Deneme-${startSetNo}`
+        : `Deneme-${startSetNo}-${endSetNo}`;
+
+      const btn = document.createElement("button");
+      btn.className = `menu-btn ${isCompleted ? "locked" : ""}`;
+      btn.innerHTML = `
+        <strong>${label}</strong><br>
+        <small>${end - start} Soru | Çözülen ${solved} (Doğru ${correct} Yanlış ${wrong})</small>
+      `;
+
+      if (!isCompleted) {
+        btn.onclick = () => startSet(i, key, start, end);
+      }
+
+      menuGrid.appendChild(btn);
+    }
+
+    const wrongPool = getWrongQuestionsPool();
+
+    if (wrongPool.length > 0) {
+      const wrongBtn = document.createElement("button");
+      wrongBtn.className = "wrong-menu-btn";
+      wrongBtn.innerHTML = `
+        <strong>Yanlış Yapılan Sorular</strong><br>
+        <small>${wrongPool.length} Soru | Yeniden çöz</small>
+      `;
+      wrongBtn.onclick = openWrongQuestions;
+      menuGrid.appendChild(wrongBtn);
+    }
+  }
+
+  function openWrongQuestions() {
+    const pool = getWrongQuestionsPool();
+    if (!pool.length) return;
+
+    wrongQuestionsMode = true;
+    currentSetKey = storagePrefix() + "wrong_questions_state";
+
+    const saved = JSON.parse(localStorage.getItem(currentSetKey) || "null");
+
+    if (saved) {
+      currentQuestions = saved.currentQuestions;
+      currentIndex = saved.currentIndex;
+      solvedIndex = saved.solvedIndex;
+      userAnswers = saved.userAnswers || {};
+      stats = saved.stats || { correct: 0, wrong: 0 };
+    } else {
+      currentQuestions = pool.map((q, i) => ({
+        id: "wrong_" + i + "_" + Math.random().toString(36).slice(2, 8),
+        originalNo: i + 1,
+        q: q.q,
+        o: [...q.o],
+        c: q.c,
+        e: q.e || "",
+        isRetry: false,
+        retryFrom: null,
+        retryCount: 0,
+        answeredCorrectly: false
+      }));
+
+      currentIndex = 0;
+      solvedIndex = -1;
+      userAnswers = {};
+      stats = { correct: 0, wrong: 0 };
+      saveState();
+    }
+
+    document.getElementById("menuContainer").style.display = "none";
+    document.getElementById("quizContainer").style.display = "block";
+    document.getElementById("headerSubject").textContent = "Yanlış Yapılan Sorular";
+    loadQuestion();
+    window.scrollTo(0, 0);
+  }
+
+  function startSet(idx, key, start, end) {
+    wrongQuestionsMode = false;
+    currentSetKey = key;
+
+    const saved = JSON.parse(localStorage.getItem(key) || "null");
+
+    if (saved) {
+      currentQuestions = saved.currentQuestions;
+      currentIndex = saved.currentIndex;
+      solvedIndex = saved.solvedIndex;
+      userAnswers = saved.userAnswers || {};
+      stats = saved.stats || { correct: 0, wrong: 0 };
+    } else {
+      currentQuestions = questions.slice(start, end).map((q, i) => normalizeQuestion(q, start + i));
+      currentIndex = 0;
+      solvedIndex = -1;
+      userAnswers = {};
+      stats = { correct: 0, wrong: 0 };
+      saveState();
+    }
+
+    document.getElementById("menuContainer").style.display = "none";
+    document.getElementById("quizContainer").style.display = "block";
+    document.getElementById("headerSubject").textContent = BASE_SUBJECT;
+    loadQuestion();
+    window.scrollTo(0, 0);
+  }
+
+  function getQuestionTitle(q) {
+    return `Soru-${q.originalNo}: ${q.q}`;
+  }
+
+  function loadQuestion() {
+    const q = currentQuestions[currentIndex];
+    const progress = ((currentIndex + 1) / currentQuestions.length) * 100;
+
+    document.getElementById("progressBar").style.width = progress + "%";
+    document.getElementById("footerLeft").textContent = `Kalan: ${Math.max(currentQuestions.length - (currentIndex + 1), 0)}`;
+    document.getElementById("footerRight").textContent = `${currentIndex + 1} / ${currentQuestions.length}`;
+    document.getElementById("questionText").textContent = getQuestionTitle(q);
+
+    const retryBadge = document.getElementById("retryBadge");
+    retryBadge.style.display = q.isRetry ? "block" : "none";
+
+    const optArea = document.getElementById("optionsArea");
+    const expArea = document.getElementById("explanationArea");
+    optArea.innerHTML = "";
+    expArea.style.display = "none";
+    expArea.innerHTML = "";
+
+    const letters = ["A", "B", "C", "D"];
+
+    q.o.forEach((opt, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "option-btn";
+      btn.innerHTML = `<strong>${letters[idx]})</strong> ${opt}`;
+
+      if (currentIndex <= solvedIndex) {
+        btn.disabled = true;
+        const userChoice = userAnswers[currentIndex];
+
+        if (idx === userChoice) {
+          if (userChoice === q.c) {
+            btn.classList.add("correct");
+            btn.innerHTML += ` <span class="tick show">✔</span>`;
+          } else {
+            btn.classList.add("wrong");
+          }
+        }
+
+        if (wrongQuestionsMode) {
+          if (idx === q.c) {
+            btn.classList.add("correct");
+            btn.innerHTML += ` <span class="tick show">✔</span>`;
+          }
+          expArea.innerHTML = `<strong>Açıklama:</strong> ${q.e}`;
+          expArea.style.display = "block";
+        } else {
+          if (userChoice === q.c) {
+            expArea.innerHTML = `<strong>Açıklama:</strong> ${q.e}`;
+            expArea.style.display = "block";
+          } else if (q.isRetry) {
+            if (idx === q.c) {
+              btn.classList.add("correct");
+              btn.innerHTML += ` <span class="tick show">✔</span>`;
+            }
+            expArea.innerHTML = `<strong>Açıklama:</strong> ${q.e}`;
+            expArea.style.display = "block";
+          }
+        }
+      } else {
+        btn.onclick = () => selectOption(idx);
+      }
+
+      optArea.appendChild(btn);
+    });
+
+    document.getElementById("prevBtn").style.visibility = currentIndex > 0 ? "visible" : "hidden";
+    document.getElementById("nextBtn").style.visibility = currentIndex <= solvedIndex ? "visible" : "hidden";
+  }
+
+  function selectOption(idx) {
+    const q = currentQuestions[currentIndex];
+    const isCorrect = idx === q.c;
+
+    userAnswers[currentIndex] = idx;
+    solvedIndex = Math.max(solvedIndex, currentIndex);
+
+    if (isCorrect) {
+      stats.correct++;
+      q.answeredCorrectly = true;
+    } else {
+      stats.wrong++;
+
+      if (wrongQuestionsMode) {
+        // Yanlış Yapılan Sorular modunda soru yeniden eklenmez.
+      } else {
+        addWrongQuestionToPool(q);
+
+        if (!q.isRetry) {
+          const retryQuestion = {
+            ...q,
+            isRetry: true,
+            retryFrom: q.originalNo,
+            retryCount: 1
+          };
+
+          const insertIndex = Math.min(currentIndex + 5, currentQuestions.length);
+          currentQuestions.splice(insertIndex, 0, retryQuestion);
+        }
+      }
+    }
+
+    saveState();
+    loadQuestion();
+  }
+
+  function saveState() {
+    localStorage.setItem(currentSetKey, JSON.stringify({
+      currentQuestions,
+      currentIndex,
+      solvedIndex,
+      userAnswers,
+      stats
+    }));
+  }
+
+  function goForward() {
+    if (currentIndex < solvedIndex) {
+      currentIndex = solvedIndex + 1;
+    } else if (currentIndex < currentQuestions.length - 1) {
+      currentIndex++;
+    } else {
+      return showMenu();
+    }
+
+    saveState();
+    loadQuestion();
+    window.scrollTo(0, 0);
+  }
+
+  function goBack() {
+    if (currentIndex > 0) {
+      currentIndex--;
+      saveState();
+      loadQuestion();
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function showMenu() {
+    wrongQuestionsMode = false;
+    document.getElementById("headerSubject").textContent = BASE_SUBJECT;
+    document.getElementById("quizContainer").style.display = "none";
+    document.getElementById("menuContainer").style.display = "block";
+    initMenu();
+    window.scrollTo(0, 0);
+  }
+
+  function clearAllStatistics() {
+    if (confirm("Tüm veriler sıfırlansın mı?")) {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith(storagePrefix())) localStorage.removeItem(k);
+      });
+      initMenu();
+    }
+  }
+
+  function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function shuffleQuestionOptions(question) {
+    const optionsWithIndex = question.o.map((option, index) => ({ option, index }));
+    shuffleArray(optionsWithIndex);
+    question.o = optionsWithIndex.map(item => item.option);
+    question.c = optionsWithIndex.findIndex(item => item.index === question.c);
+    return question;
+  }
+
+  function shuffleAllQuestions() {
+    if (!confirm("Tüm sorular ve şıklar karıştırılsın mı? Bu işlem mevcut ilerlemeyi sıfırlar.")) return;
+
+    shuffleArray(questions);
+    questions.forEach(q => shuffleQuestionOptions(q));
+
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith(storagePrefix())) localStorage.removeItem(k);
+    });
+
+    currentQuestions = [];
+    currentIndex = 0;
+    solvedIndex = -1;
+    userAnswers = {};
+    currentSetKey = "";
+    stats = { correct: 0, wrong: 0 };
+    wrongQuestionsMode = false;
+
+    alert("Sorular ve şıklar karıştırıldı.");
+    showMenu();
+  }
+
+  function resetCurrentSet() {
+    if (confirm("Bu deneme sıfırlansın mı?")) {
+      localStorage.removeItem(currentSetKey);
+      showMenu();
+    }
+  }
+
+  initMenu();
+</script>
+</body>
+</html>
